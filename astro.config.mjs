@@ -1,0 +1,75 @@
+import node from "@astrojs/node";
+import react from "@astrojs/react";
+import auditLog from "@emdash-cms/plugin-audit-log";
+import { defineConfig, fontProviders } from "astro/config";
+import emdash, { s3 } from "emdash/astro";
+import { postgres } from "emdash/db";
+
+// cdn.igene.tw -- WordPress -> EmDash migration target.
+// Runtime config is read from environment variables injected by the k8s
+// deployment (SOPS-managed secrets); nothing secret lives in this repo.
+// See the k8s-infra repo: emdash/migration-procedure.md.
+export default defineConfig({
+	output: "server",
+	adapter: node({
+		mode: "standalone",
+	}),
+	// Bilingual blog. zh-TW is the default locale (no URL prefix); en lives
+	// under /en/. EmDash content is locale-aware at the data layer.
+	i18n: {
+		defaultLocale: "zh-TW",
+		locales: ["zh-TW", "en"],
+		fallback: { en: "zh-TW" },
+	},
+	image: {
+		layout: "constrained",
+		responsiveStyles: true,
+	},
+	integrations: [
+		react(),
+		emdash({
+			// Required behind a TLS-terminating reverse proxy (the shared Cilium
+			// gateway). Drives passkeys, CSRF, OAuth redirects, structured data.
+			// Locked after the first setup call -- set before bootstrapping.
+			siteUrl: process.env.EMDASH_SITE_URL,
+			// Postgres (CNPG). DATABASE_URL comes from the emdash-pg-app secret.
+			database: postgres({ connectionString: process.env.DATABASE_URL }),
+			// s3() reads S3_ENDPOINT/BUCKET/ACCESS_KEY_ID/SECRET_ACCESS_KEY/REGION/
+			// PUBLIC_URL from env at runtime. forcePathStyle is hardcoded on inside
+			// the adapter, so Ceph RGW works without any toggle. With S3_PUBLIC_URL
+			// unset, media is proxied via /_emdash/api/media/file/{key}.
+			storage: s3(),
+			// Required for working per-IP rate limits behind the Cilium Gateway /
+			// Envoy (which populates x-forwarded-for). Without it, auth and comment
+			// rate limits collapse to one shared bucket.
+			trustedProxyHeaders: (process.env.EMDASH_TRUSTED_PROXY_HEADERS ?? "x-forwarded-for")
+				.split(",")
+				.map((h) => h.trim())
+				.filter(Boolean),
+			// Cap uploads to match the ingress / proxy body-size limit (50 MiB).
+			maxUploadSize: 50 * 1024 * 1024,
+			plugins: [auditLog],
+		}),
+	],
+	// Build-time fonts via Astro's native font API (downloads from Google during
+	// `astro build` -- the build/CI environment needs egress to fonts.google.com).
+	// TODO(i18n): add a Traditional-Chinese face (e.g. "Noto Sans TC") for zh-TW
+	// body text; the system sans-serif fallback renders CJK in the meantime.
+	fonts: [
+		{
+			provider: fontProviders.google(),
+			name: "Inter",
+			cssVariable: "--font-sans",
+			weights: [400, 500, 600, 700],
+			fallbacks: ["sans-serif"],
+		},
+		{
+			provider: fontProviders.google(),
+			name: "JetBrains Mono",
+			cssVariable: "--font-mono",
+			weights: [400, 500],
+			fallbacks: ["monospace"],
+		},
+	],
+	devToolbar: { enabled: false },
+});

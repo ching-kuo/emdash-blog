@@ -1,0 +1,11 @@
+node_modules
+dist
+.astro
+.git
+.github
+uploads
+data.db
+# Never copy local secrets into the image
+.env
+.env.*
+.dev.vars
