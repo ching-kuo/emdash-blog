@@ -10,3 +10,16 @@ index fe5302c..2decba7 100644
  					handleContentGet: runtime.handleContentGet.bind(runtime),
  					handleContentCreate: runtime.handleContentCreate.bind(runtime),
  					handleContentUpdate: runtime.handleContentUpdate.bind(runtime),
+diff --git a/node_modules/emdash/dist/redirects-6Zg2SoYo.mjs b/node_modules/emdash/dist/redirects-6Zg2SoYo.mjs
+index fbf9e13..f3e0454 100644
+--- a/node_modules/emdash/dist/redirects-6Zg2SoYo.mjs
++++ b/node_modules/emdash/dist/redirects-6Zg2SoYo.mjs
+@@ -29,7 +29,7 @@ const HTTP_SCHEME_RE = /^https?:\/\//i;
+ /** Validates that a URL string uses http or https scheme. Rejects javascript:/data: URI XSS vectors. */
+ const httpUrl = z.string().url().refine((url) => HTTP_SCHEME_RE.test(url), "URL must use http or https");
+ /** BCP 47 locale code — language with optional script/region subtags (e.g. en, en-US, pt-BR, es-419, zh-Hant) */
+-const localeCode = z.string().regex(/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i, "Invalid locale code").transform((v) => v.toLowerCase());
++const localeCode = z.string().regex(/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i, "Invalid locale code");
+ /** Shared `?locale=xx` query shape for endpoints that filter by locale. */
+ const localeFilterQuery = z.object({ locale: z.string().min(1).optional() }).meta({ id: "LocaleFilterQuery" });
+ /** Standard API error response */
