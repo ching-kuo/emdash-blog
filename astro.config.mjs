@@ -3,7 +3,7 @@ import react from "@astrojs/react";
 import auditLog from "@emdash-cms/plugin-audit-log";
 import { defineConfig, fontProviders, sessionDrivers } from "astro/config";
 import emdash, { s3 } from "emdash/astro";
-import { postgres } from "emdash/db";
+import { sqlite } from "emdash/db";
 
 // cdn.igene.tw -- WordPress -> EmDash migration target.
 // Runtime config is read from environment variables injected by the k8s
@@ -44,8 +44,13 @@ export default defineConfig({
 			// gateway). Drives passkeys, CSRF, OAuth redirects, structured data.
 			// Locked after the first setup call -- set before bootstrapping.
 			siteUrl: process.env.EMDASH_SITE_URL,
-			// Postgres (CNPG). DATABASE_URL comes from the emdash-pg-app secret.
-			database: postgres({ connectionString: process.env.DATABASE_URL }),
+			// SQLite (better-sqlite3) on a RWO PVC mounted at /app/data. EmDash's
+			// Postgres dialect is buggy in 0.21.0 (json-column DISTINCT, 404-log
+			// ambiguous `hits`, plugin-storage `text ->>`); SQLite is the primary,
+			// well-tested backend and sidesteps all of it. The path is build-frozen
+			// (EmDash bakes `database` config at build time), so it must be a fixed
+			// absolute path, not an env var. Single-writer is fine at replicas: 1.
+			database: sqlite({ url: "file:/app/data/emdash.db" }),
 			// s3() reads S3_ENDPOINT/BUCKET/ACCESS_KEY_ID/SECRET_ACCESS_KEY/REGION/
 			// PUBLIC_URL from env at runtime. forcePathStyle is hardcoded on inside
 			// the adapter, so Ceph RGW works without any toggle. With S3_PUBLIC_URL

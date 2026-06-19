@@ -32,6 +32,12 @@ EXPOSE 4321
 # can persist sessions; node_modules/.astro is root-owned and not writable.
 RUN mkdir -p /app/sessions && chown 1000:1000 /app/sessions
 
+# SQLite database dir (database: sqlite file:/app/data/emdash.db). A RWO PVC
+# mounts over this at runtime; the mountpoint must exist and be writable by
+# uid 1000 (pod fsGroup also grants the volume to gid 1000). better-sqlite3
+# needs write on the DIR too, for the -wal/-shm sidecar files.
+RUN mkdir -p /app/data && chown 1000:1000 /app/data
+
 # EmDash runs schema migrations automatically on the first request for every
 # dialect including Postgres (per the emdash deployment docs), so the server is
 # the only entrypoint. `emdash init` is SQLite-only (--database takes a file

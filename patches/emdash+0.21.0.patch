@@ -1,0 +1,12 @@
+diff --git a/node_modules/emdash/dist/astro/middleware.mjs b/node_modules/emdash/dist/astro/middleware.mjs
+index fe5302c..2decba7 100644
+--- a/node_modules/emdash/dist/astro/middleware.mjs
++++ b/node_modules/emdash/dist/astro/middleware.mjs
+@@ -2589,6 +2589,7 @@ const onRequest = defineMiddleware(async (context, next) => {
+ 				markSetupVerified();
+ 				locals.emdash = {
+ 					handleContentList: runtime.handleContentList.bind(runtime),
++					handleContentAuthors: runtime.handleContentAuthors.bind(runtime),
+ 					handleContentGet: runtime.handleContentGet.bind(runtime),
+ 					handleContentCreate: runtime.handleContentCreate.bind(runtime),
+ 					handleContentUpdate: runtime.handleContentUpdate.bind(runtime),

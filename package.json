@@ -8,6 +8,7 @@
     "seed": "seed/seed.json"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -28,6 +29,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.7"
+    "@astrojs/check": "^0.9.7",
+    "patch-package": "^8.0.1"
   }
 }
