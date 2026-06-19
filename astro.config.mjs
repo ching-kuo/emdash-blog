@@ -53,8 +53,6 @@ export default defineConfig({
 	],
 	// Build-time fonts via Astro's native font API (downloads from Google during
 	// `astro build` -- the build/CI environment needs egress to fonts.google.com).
-	// TODO(i18n): add a Traditional-Chinese face (e.g. "Noto Sans TC") for zh-TW
-	// body text; the system sans-serif fallback renders CJK in the meantime.
 	fonts: [
 		{
 			provider: fontProviders.google(),
