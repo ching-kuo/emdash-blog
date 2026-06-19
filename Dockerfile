@@ -8,7 +8,11 @@ RUN npm ci
 COPY . .
 # astro build downloads fonts from fonts.google.com -- the build environment
 # needs outbound HTTPS. No runtime secrets are required at build time.
-RUN npm run build
+# The Noto Sans TC (zh-TW) subset pulls ~120 CJK woff2 chunks from gstatic; a
+# single transient fetch failure aborts the build. Astro caches already-fetched
+# files on disk within this RUN, so one retry resumes from cache and rides out
+# a flaky chunk. ponytail: retry-once; add actions/cache if CI flakes persist.
+RUN npm run build || (echo "build retry (font fetch)" && npm run build)
 
 FROM node:22-slim
 WORKDIR /app

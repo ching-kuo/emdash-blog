@@ -83,6 +83,8 @@ const isLoggedIn = !!Astro.locals.user;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<Font cssVariable="--font-sans" preload />
 		<Font cssVariable="--font-mono" />
+		{/* Noto Sans TC (zh-TW). Not preloaded: CJK files are large and load on demand. */}
+		<Font cssVariable="--font-sans-tc" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
 		<script is:inline>

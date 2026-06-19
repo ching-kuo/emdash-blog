@@ -61,7 +61,10 @@ export default defineConfig({
 			name: "Inter",
 			cssVariable: "--font-sans",
 			weights: [400, 500, 600, 700],
-			fallbacks: ["sans-serif"],
+			// Latin renders in Inter; Han characters fall through to Noto Sans TC
+			// (declared below) before the generic. So --font-sans resolves to
+			// "Inter", "Noto Sans TC", sans-serif everywhere it is used.
+			fallbacks: ["Noto Sans TC", "sans-serif"],
 		},
 		{
 			provider: fontProviders.google(),
@@ -69,6 +72,18 @@ export default defineConfig({
 			cssVariable: "--font-mono",
 			weights: [400, 500],
 			fallbacks: ["monospace"],
+		},
+		{
+			// Traditional Chinese (zh-TW) body/UI text. CJK glyph sets are large,
+			// so we keep to two weights and the chinese-traditional + latin subsets,
+			// and do NOT preload (loaded on demand). Reached via Inter's fallback
+			// chain above rather than by referencing --font-sans-tc directly.
+			provider: fontProviders.google(),
+			name: "Noto Sans TC",
+			cssVariable: "--font-sans-tc",
+			weights: [400, 700],
+			subsets: ["latin", "chinese-traditional"],
+			fallbacks: ["sans-serif"],
 		},
 	],
 	devToolbar: { enabled: false },
