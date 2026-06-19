@@ -27,6 +27,8 @@ ENV HOST=0.0.0.0
 ENV PORT=4321
 EXPOSE 4321
 
-# `npx emdash init` runs schema migrations against DATABASE_URL (Postgres/CNPG)
-# on every start. It is idempotent.
-CMD ["sh", "-c", "npx emdash init && node ./dist/server/entry.mjs"]
+# EmDash runs schema migrations automatically on the first request for every
+# dialect including Postgres (per the emdash deployment docs), so the server is
+# the only entrypoint. `emdash init` is SQLite-only (--database takes a file
+# path) and must NOT run here -- it would create a stray ./data.db and crash.
+CMD ["node", "./dist/server/entry.mjs"]
