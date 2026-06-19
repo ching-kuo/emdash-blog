@@ -1,7 +1,7 @@
 import node from "@astrojs/node";
 import react from "@astrojs/react";
 import auditLog from "@emdash-cms/plugin-audit-log";
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig, fontProviders, sessionDrivers } from "astro/config";
 import emdash, { s3 } from "emdash/astro";
 import { postgres } from "emdash/db";
 
@@ -25,18 +25,17 @@ export default defineConfig({
 		layout: "constrained",
 		responsiveStyles: true,
 	},
-	// The Node adapter defaults Astro session storage to a filesystem driver under
-	// node_modules/.astro/sessions, which does not exist and is not writable in the
-	// production image (we run as the non-root uid 1000; node_modules is root-owned).
-	// Login writes a session -> ENOENT. Point the store at a dedicated dir that the
-	// Dockerfile creates and chowns to uid 1000. fs-lite skips file-watching, which
-	// is pointless server-side. base is inlined at build time (Astro reads session
-	// config at build), so it must be a fixed path, not an env var.
+	// The Node adapter defaults Astro session storage to a filesystem dir under the
+	// project cacheDir (.astro/...), which does not exist and is not writable in the
+	// production image (we run as the non-root uid 1000). Login writes a session ->
+	// ENOENT. Point the store at a dedicated dir the Dockerfile creates and chowns to
+	// uid 1000. Astro 6 takes a driver FACTORY (sessionDrivers.fsLite), not a string;
+	// fsLite skips file-watching, which is pointless server-side. base is inlined at
+	// build time, so it must be a fixed path, not an env var.
 	// ponytail: fs sessions are per-pod and reset on restart -- fine at replicas: 1.
 	// For multi-replica, switch to a shared driver (e.g. redis) so logins don't bounce.
 	session: {
-		driver: "fs-lite",
-		options: { base: "/app/sessions" },
+		driver: sessionDrivers.fsLite({ base: "/app/sessions" }),
 	},
 	integrations: [
 		react(),
