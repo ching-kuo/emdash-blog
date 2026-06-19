@@ -4,6 +4,10 @@
 FROM node:22-slim AS builder
 WORKDIR /app
 COPY package*.json ./
+# patch-package runs as npm ci's postinstall and needs patches/ to already
+# exist -- otherwise it logs "No patch files found" and silently no-ops, so the
+# emdash handleContentAuthors fix never lands. Copy patches before npm ci.
+COPY patches ./patches
 RUN npm ci
 COPY . .
 # astro build downloads fonts from fonts.google.com -- the build environment
