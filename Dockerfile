@@ -27,6 +27,11 @@ ENV HOST=0.0.0.0
 ENV PORT=4321
 EXPOSE 4321
 
+# Astro session store (configured as fs-lite base=/app/sessions in astro.config).
+# Pre-create and hand it to uid 1000 (the node user we run as in k8s) so login
+# can persist sessions; node_modules/.astro is root-owned and not writable.
+RUN mkdir -p /app/sessions && chown 1000:1000 /app/sessions
+
 # EmDash runs schema migrations automatically on the first request for every
 # dialect including Postgres (per the emdash deployment docs), so the server is
 # the only entrypoint. `emdash init` is SQLite-only (--database takes a file
