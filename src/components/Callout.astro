@@ -1,0 +1,74 @@
+---
+/*
+  Callout -- highlighted note / warning block for the article body. Ported
+  from the design system's Callout.jsx. Tone drives the accent colour + tint
+  via per-tone CSS vars. Default zh-Hant labels; pass `title` to override.
+*/
+interface Props {
+	tone?: "note" | "info" | "warn" | "success" | "danger";
+	title?: string;
+	class?: string;
+}
+const { tone = "note", title, class: className } = Astro.props;
+const LABELS: Record<string, string> = {
+	note: "注意",
+	info: "說明",
+	warn: "警告",
+	success: "完成",
+	danger: "小心",
+};
+const label = title ?? LABELS[tone] ?? LABELS.note;
+---
+
+<div class:list={["callout", className]} data-tone={tone}>
+	<div class="callout-label">{label}</div>
+	<div class="callout-body"><slot /></div>
+</div>
+
+<style>
+	/* design used --border-strong as a 2px WIDTH here -> --border-thick */
+	.callout {
+		border-left: var(--border-thick) solid var(--tone-color);
+		background: var(--tone-soft);
+		border-radius: var(--radius-sm);
+		padding: var(--space-4) var(--space-5);
+		max-width: var(--measure);
+		font-family: var(--font-serif);
+		color: var(--text-body);
+		line-height: var(--leading-prose);
+	}
+
+	.callout[data-tone="note"] {
+		--tone-color: var(--accent);
+		--tone-soft: var(--accent-soft);
+	}
+	.callout[data-tone="info"] {
+		--tone-color: var(--info);
+		--tone-soft: var(--info-soft);
+	}
+	.callout[data-tone="warn"] {
+		--tone-color: var(--warn);
+		--tone-soft: var(--warn-soft);
+	}
+	.callout[data-tone="success"] {
+		--tone-color: var(--success);
+		--tone-soft: var(--success-soft);
+	}
+	.callout[data-tone="danger"] {
+		--tone-color: var(--danger);
+		--tone-soft: var(--danger-soft);
+	}
+
+	.callout-label {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-bold);
+		letter-spacing: 0.04em;
+		color: var(--tone-color);
+		margin-bottom: var(--space-2);
+	}
+
+	.callout-body {
+		font-size: var(--text-prose); /* design's --text-body (size) */
+	}
+</style>

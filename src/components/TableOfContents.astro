@@ -1,0 +1,138 @@
+---
+/*
+  TableOfContents -- sticky article outline. Ported from the design system's
+  TableOfContents.jsx. Pass `items` as a flat or 2-level list of
+  { id, label, children? }. The active heading is tracked client-side via
+  IntersectionObserver against the matching element ids in the document.
+*/
+interface TocItem {
+	id: string;
+	label: string;
+	children?: { id: string; label: string }[];
+}
+interface Props {
+	items?: TocItem[];
+	title?: string;
+	class?: string;
+}
+const { items = [], title = "目錄", class: className } = Astro.props;
+---
+
+{
+	items.length > 0 && (
+		<nav class:list={["toc", className]} aria-label={title}>
+			<p class="toc-title">{title}</p>
+			<ul class="toc-list">
+				{items.map((it) => (
+					<li>
+						<a class="toc-link" href={`#${it.id}`} data-toc-id={it.id}>
+							{it.label}
+						</a>
+						{it.children && it.children.length > 0 && (
+							<ul class="toc-list toc-list--nested">
+								{it.children.map((c) => (
+									<li>
+										<a
+											class="toc-link toc-link--nested"
+											href={`#${c.id}`}
+											data-toc-id={c.id}
+										>
+											{c.label}
+										</a>
+									</li>
+								))}
+							</ul>
+						)}
+					</li>
+				))}
+			</ul>
+		</nav>
+	)
+}
+
+<style>
+	.toc {
+		font-family: var(--font-sans);
+		max-width: 260px;
+	}
+
+	.toc-title {
+		font-size: var(--text-sm);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-label);
+		font-weight: var(--weight-bold);
+		color: var(--text-faint);
+		margin: 0 0 var(--space-3);
+	}
+
+	.toc-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.toc-link {
+		display: block;
+		font-size: var(--text-base);
+		line-height: 1.5;
+		padding: 0.28rem 0;
+		color: var(--text-muted);
+		font-weight: var(--weight-regular);
+		text-decoration: none;
+		transition: color var(--dur-fast) var(--ease-out);
+	}
+
+	.toc-link:hover {
+		color: var(--accent);
+	}
+
+	.toc-link--nested {
+		font-size: var(--text-sm);
+		padding-left: var(--space-4);
+		margin-left: 0.4rem;
+		border-left: var(--border-thick) solid var(--border);
+	}
+
+	.toc-link.is-active {
+		color: var(--accent);
+		font-weight: var(--weight-semibold);
+	}
+
+	.toc-link--nested.is-active {
+		border-left-color: var(--accent);
+	}
+</style>
+
+<script>
+	// Highlight the heading currently in view.
+	const links = Array.from(
+		document.querySelectorAll<HTMLAnchorElement>(".toc-link[data-toc-id]")
+	);
+	if (links.length && "IntersectionObserver" in window) {
+		const byId = new Map(links.map((l) => [l.dataset.tocId!, l]));
+		const targets = links
+			.map((l) => document.getElementById(l.dataset.tocId!))
+			.filter((el): el is HTMLElement => !!el);
+
+		if (targets.length) {
+			let activeId: string | null = null;
+			const setActive = (id: string | null) => {
+				if (id === activeId) return;
+				if (activeId) byId.get(activeId)?.classList.remove("is-active");
+				if (id) byId.get(id)?.classList.add("is-active");
+				activeId = id;
+			};
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					const visible = entries
+						.filter((e) => e.isIntersecting)
+						.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+					if (visible[0]) setActive(visible[0].target.id);
+				},
+				{ rootMargin: "0px 0px -70% 0px", threshold: 0 }
+			);
+			targets.forEach((el) => observer.observe(el));
+		}
+	}
+</script>

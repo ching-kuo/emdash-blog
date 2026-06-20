@@ -17,8 +17,10 @@ The admin UI is at `http://localhost:4321/_emdash/admin`.
 | `src/live.config.ts`     | EmDash loader registration (boilerplate -- don't modify)                           |
 | `seed/seed.json`         | Schema definition + demo content (collections, fields, taxonomies, menus, widgets) |
 | `emdash-env.d.ts`        | Generated types for collections (auto-regenerated on dev server start)             |
-| `src/layouts/Base.astro` | Base layout with EmDash wiring (menus, search, page contributions)                 |
+| `src/layouts/Base.astro` | Base layout: header (wordmark, nav, live search, theme toggle), footer (about, social, navigate, widgets), EmDash wiring |
 | `src/pages/`             | Astro pages -- all server-rendered                                                 |
+| `src/components/`        | Presentational components: Avatar, Byline, Button, Tag, Callout, CodeBlock, PostCard, TableOfContents, SocialLinks |
+| `src/styles/`            | `tokens.css` (palette, type scale, spacing, light+dark), `base.css` (element + `.prose` styles), `theme.css` (the override surface) |
 
 ## Skills
 
@@ -44,15 +46,15 @@ This template ships with `.mcp.json`, `.cursor/mcp.json`, and `.vscode/mcp.json`
 
 ## This Template
 
-A blog with posts, pages, categories, tags, full-text search, and RSS. Designed for personal writing, technical writing, indie newsletters, and anything where the writing is the product. Editorial-tech aesthetic: confident sans-serif, restrained accent, real article structure with bylines and reading time.
+A blog with posts, pages, categories, tags, full-text search, and RSS. Designed for personal writing, technical writing, indie newsletters, and anything where the writing is the product. Warm editorial aesthetic ("Gene's Workspace"): Source Serif 4 body + headings, a single sienna accent on warm paper, Apple-HIG dark mode, real article structure with bylines and reading time. Bilingual zh-TW / en with CJK-aware fonts.
 
 ## Pages
 
 | Page        | Path               | What it shows                                                                                          |
 | ----------- | ------------------ | ------------------------------------------------------------------------------------------------------ |
 | Home        | `/`                | Featured post hero (large image + excerpt), latest posts grid                                          |
-| All posts   | `/posts`           | Article count, full post list with excerpts and tag chips                                              |
-| Post detail | `/posts/[slug]`    | Featured image, title, body, left meta column (authors + date), right TOC + search + categories gutter |
+| All posts   | `/posts`           | Article count, full post list (PostCard rows: category chip, byline, date, excerpt, thumbnail)        |
+| Post detail | `/posts/[slug]`    | Inline header (category + date + title + excerpt + byline), full-width hero, centred 680px serif `.prose` body, sticky right TOC rail (+ sidebar widgets), tags, author block, comments, continue-reading |
 | Search      | `/search`          | Full-text search UI                                                                                    |
 | Page        | `/pages/[slug]`    | Static page content (Portable Text)                                                                    |
 | Category    | `/category/[slug]` | Posts filtered by category                                                                             |
@@ -66,39 +68,40 @@ A blog with posts, pages, categories, tags, full-text search, and RSS. Designed 
 - Taxonomies: `category`, `tag`.
 - Single `primary` menu (Home, About, Posts by default).
 
-Site settings have `title` and `tagline` -- both render in the header / footer.
+Site settings have `title` and `tagline`. The title is the header wordmark (the part after the first space takes the accent colour) and the footer brand; the tagline is the header sub-label and footer bio. The header also has live search (⌘K) and a light/dark/system theme toggle. Post cards lead with the post's primary **category** chip (links to `/category/…`); the full **tag** list shows on the article and at `/tag/…`.
 
 ## Visual character
 
-Single typeface: **Inter** on `--font-sans`, used for everything including headings (with tighter letter-spacing on h1/h2). **JetBrains Mono** on `--font-mono` for inline code and code blocks. Body and headings share the same family; weight and size carry the hierarchy.
+Warm, editorial, text-forward. **Source Serif 4** (with **Noto Serif TC** for Han) on `--font-serif` carries body *and* headings; **Hanken Grotesk** (+ Noto Sans TC) on `--font-sans` is for nav, meta, tags, buttons; **JetBrains Mono** on `--font-mono` for code. Body is 18px (`--text-prose`) at 1.85 line-height on a ~680px measure (`--measure`).
 
-The accent is `#0066cc` -- used for links, the post-card title hover, and the search input focus ring. There's also a secondary text colour (`--color-text-secondary`) and a `--color-muted` for meta info. Don't add a second accent.
+Light is warm paper (`--bg` `#F5F0E8`) with warm ink; dark follows Apple HIG (warm true-dark base, elevation via progressively lighter surfaces, soft near-white text) -- a hand-tuned pair, not auto-inverted. A single restrained **sienna** accent: `--accent` `#AC4E2A` light, `#E2926A` dark. Don't add a second accent. Semantic hues (`--info`/`--warn`/`--success`/`--danger`) are reserved for callouts.
 
-The article layout is the standout feature: a three-column reading view with a left meta column (author bylines, date), centred 680px body column, and a right gutter for search, table of contents, and categories. Don't flatten that into one column on desktop -- the layout signals "this is something to read".
+The article is the standout: a two-column reading view -- a centred body column capped at `--measure-wide` (~832px) with a sticky right **TOC rail** (table of contents + sidebar widgets). Category, date, and author byline sit inline above the title; the full tag list and an author block close the piece. Don't collapse the TOC rail on desktop -- the layout signals "this is something to read".
 
 ## Customisation
 
-`src/styles/theme.css` is the only file to edit for visual changes. Every CSS variable from `Base.astro` is listed there as a commented default -- uncomment and change to override. The dark mode palette is defined inside `Base.astro` itself; light-mode overrides in `theme.css` won't affect dark mode. To customise dark mode, add `@media (prefers-color-scheme: dark)` and `:root.dark` rules in `theme.css`.
+`src/styles/theme.css` is the only file to edit for visual changes -- it lists every design token as a commented default; uncomment and change to override (it is unlayered, so it always wins over the `@layer base` defaults). The canonical tokens live in `src/styles/tokens.css` (palette + type scale + spacing, light + dark) and the element/`.prose` styles in `src/styles/base.css`.
 
-Fonts are configured in `astro.config.mjs` under `fonts:`. To swap the body face, change the `name:` for the entry bound to `cssVariable: "--font-sans"`. Good alternatives: Geist, IBM Plex Sans, Söhne (if you have a licence), Public Sans. If you want a serif-bodied blog, swap to a humanist serif like Source Serif, Crimson Pro, or Lora -- but then also raise `--font-size-base` to `1.0625rem` for readability.
+Dark mode is **class-based**: the header toggle cycles system → light → dark, setting a `theme` cookie and toggling `.dark` / `.light` on `<html>` (with `prefers-color-scheme` for first paint). To retheme dark mode, override a token inside `:root.dark { ... }` in `theme.css` (and `@media (prefers-color-scheme: dark) { :root:not(.light) { ... } }` to also affect OS-dark first paint).
 
-CSS variables worth knowing:
+Fonts are configured in `astro.config.mjs` under `fonts:` (self-hosted via Astro's `<Font>` API; the build needs egress to `fonts.google.com`). To swap the body face, change the `name:` of the entry bound to `cssVariable: "--font-serif"` and keep its Noto Serif TC fallback for CJK. `--font-sans` is the UI face, `--font-mono` the code face.
 
-- `--color-accent`, `--color-accent-hover`, `--color-on-accent`, `--color-accent-ring`
-- `--color-bg`, `--color-bg-subtle`, `--color-surface`, `--color-text`, `--color-text-secondary`, `--color-muted`, `--color-border`, `--color-border-subtle`
-- `--font-sans`, `--font-mono`
-- `--tracking-tight` / `--tracking-snug` / `--tracking-wide` / `--tracking-wider` -- letter-spacing tokens used across headings and meta labels
-- `--content-width` (680px) -- article body column
-- `--wide-width` (1200px) -- max container
-- `--gutter-width` (200px) -- right sidebar (TOC) on article pages
-- `--meta-col-width` (180px) -- left meta column on article pages
-- `--avatar-size-{xs,sm,md,lg}` -- byline avatar sizes at different scales
+Tokens worth knowing (full list in `theme.css`):
+
+- Surfaces/borders: `--bg`, `--bg-deep`, `--surface-card`, `--surface-code`, `--surface-inline`, `--surface-raised`, `--border`, `--border-strong` (colour), `--border-hairline` / `--border-thick` (widths)
+- Text colours: `--text-strong`, `--text-body`, `--text-muted`, `--text-faint`, `--text-code`
+- Accent: `--accent`, `--accent-strong`, `--accent-soft`, `--on-accent`, `--link`, `--link-hover`; semantic `--info`/`--warn`/`--success`/`--danger` (+ `-soft`)
+- `--font-serif`, `--font-sans`, `--font-mono`
+- Type sizes: `--text-xs/sm/base/prose/lg/h3/h2/h1/display` -- **the body size is `--text-prose`** (because `--text-body` is a colour)
+- Layout: `--measure` (680px body), `--measure-wide` (832px), `--wide-width` (1080px shell), `--header-height`
+- `--space-1..9`, `--flow-gap`; `--radius-sm/md/lg/pill`; `--dur-fast/base/slow`, `--ease-out`; `--tracking-tight/label`
 
 ## What not to do
 
-- Don't add a second accent colour or coloured section backgrounds. The page should be black, white, and one blue.
-- Don't replace Inter with a display sans (Bebas, Anton, etc.). Headings rely on weight contrast, not novelty faces.
-- Don't collapse the article gutter on desktop -- it's part of the reading experience.
+- Don't add a second accent colour or coloured section backgrounds. The palette is warm paper/ink and one sienna.
+- Don't set body text in the sans face -- the serif (`--font-serif`) is the reading voice; sans is for UI/meta only. Don't swap a display face onto headings.
+- Don't use `--text-body` as a font-size or `--border-strong` as a width -- those are colour tokens; use `--text-prose` and `--border-thick` / `--border-hairline`.
+- Don't collapse the article's TOC rail on desktop -- it's part of the reading experience.
 - Don't use stock blog copy ("Welcome to my blog", "Stay tuned for more"). Write a real tagline that says what this blog is about.
 - Don't seed the home page with three identical placeholder posts. If you only have one real post, show one real post.
-- Don't enable comments without a plan to moderate them. The template doesn't ship a comments system by default for a reason.
+- Don't enable comments without a plan to moderate them.

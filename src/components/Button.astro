@@ -1,0 +1,120 @@
+---
+/*
+  Button -- primary action control. Ported from the design system's Button.jsx.
+  Renders <a> when `href` is set (and not disabled), else <button>. Hover/press
+  are CSS state instead of React state.
+*/
+interface Props {
+	variant?: "primary" | "secondary" | "ghost";
+	size?: "sm" | "md" | "lg";
+	href?: string;
+	type?: "button" | "submit" | "reset";
+	disabled?: boolean;
+	fullWidth?: boolean;
+	class?: string;
+}
+const {
+	variant = "primary",
+	size = "md",
+	href,
+	type = "button",
+	disabled = false,
+	fullWidth = false,
+	class: className,
+} = Astro.props;
+const asLink = !!href && !disabled;
+const Tag = asLink ? "a" : "button";
+---
+
+<Tag
+	class:list={["btn", `btn--${variant}`, `btn--${size}`, { "btn--full": fullWidth }, className]}
+	href={asLink ? href : undefined}
+	type={asLink ? undefined : type}
+	disabled={asLink ? undefined : disabled}
+	aria-disabled={disabled ? "true" : undefined}
+>
+	<slot />
+</Tag>
+
+<style>
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		font-family: var(--font-sans);
+		font-weight: var(--weight-semibold);
+		line-height: 1.2;
+		border-radius: var(--radius-md);
+		border: var(--border-hairline) solid transparent;
+		cursor: pointer;
+		text-decoration: none;
+		user-select: none;
+		white-space: nowrap;
+		transition:
+			background var(--dur-fast) var(--ease-out),
+			color var(--dur-fast) var(--ease-out),
+			border-color var(--dur-fast) var(--ease-out),
+			transform var(--dur-fast) var(--ease-out);
+	}
+
+	.btn:active {
+		transform: translateY(1px);
+	}
+
+	.btn:disabled,
+	.btn[aria-disabled="true"] {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn[aria-disabled="true"]:active {
+		transform: none;
+	}
+
+	.btn--full {
+		width: 100%;
+	}
+
+	.btn--sm {
+		padding: 0.4rem 0.85rem;
+		font-size: var(--text-sm);
+		gap: 0.4rem;
+	}
+	.btn--md {
+		padding: 0.6rem 1.2rem;
+		font-size: var(--text-base);
+	}
+	.btn--lg {
+		padding: 0.8rem 1.6rem;
+		font-size: var(--text-prose); /* design's --text-body (size) */
+		gap: 0.6rem;
+	}
+
+	.btn--primary {
+		background: var(--accent);
+		color: var(--on-accent);
+	}
+	.btn--primary:hover {
+		background: var(--accent-strong);
+	}
+
+	/* --border-strong here is the COLOR tier (not a width) -- kept as-is */
+	.btn--secondary {
+		background: transparent;
+		color: var(--accent);
+		border-color: var(--border-strong);
+	}
+	.btn--secondary:hover {
+		background: var(--accent-soft);
+	}
+
+	.btn--ghost {
+		background: transparent;
+		color: var(--text-body);
+	}
+	.btn--ghost:hover {
+		background: var(--accent-soft);
+		color: var(--accent-strong);
+	}
+</style>

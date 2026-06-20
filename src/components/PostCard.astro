@@ -1,107 +1,75 @@
 ---
+/*
+  PostCard -- homepage / archive list item, redesigned to the "Gene WorkSpace"
+  editorial style: category chip, title, date + reading time, excerpt, optional
+  thumbnail. `layout="row"` puts the thumbnail beside the text; "stacked" puts
+  it on top. The thumbnail is an EmDash MediaValue rendered through the
+  optimizing <Image>. Pages map their query results onto these props.
+
+  Author bylines (overlapping avatars + names) render in the meta row when
+  provided -- pass `post.data.bylines`.
+*/
 import type { MediaValue, ContentBylineCredit } from "emdash";
 import { Image } from "emdash/ui";
+import Tag from "./Tag.astro";
+import Byline from "./Byline.astro";
 
 interface Props {
 	title: string;
-	excerpt?: string;
-	featuredImage?: MediaValue | string;
 	href: string;
-	date?: Date;
-	readingTime?: number;
-	tags?: Array<{ slug: string; label: string }>;
+	category?: string | null;
+	categoryHref?: string | null;
+	date?: Date | string | null;
+	readingTime?: number | string | null;
+	excerpt?: string | null;
+	image?: MediaValue | string | null;
 	bylines?: ContentBylineCredit[];
+	layout?: "row" | "stacked";
+	class?: string;
 }
-
 const {
 	title,
-	excerpt,
-	featuredImage,
 	href,
+	category,
+	categoryHref,
 	date,
 	readingTime,
-	tags,
-	bylines,
+	excerpt,
+	image,
+	bylines = [],
+	layout = "row",
+	class: className,
 } = Astro.props;
 
-const formattedDate = date
-	? date.toLocaleDateString("en-US", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		})
-	: null;
+const dateLabel =
+	date instanceof Date
+		? date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+		: (date ?? null);
+const readingLabel =
+	typeof readingTime === "number" ? `${readingTime} min` : (readingTime ?? null);
+const meta = [dateLabel, readingLabel].filter(Boolean).join(" · ");
 ---
 
-<article class="post-card">
-	<a href={href} class="card-link">
-		{
-			featuredImage ? (
-				<div class="card-image">
-					<Image image={featuredImage} />
-				</div>
-			) : (
-				<div class="card-placeholder" />
-			)
-		}
-		<div class="card-body">
-			<div class="card-meta">
-				{
-					bylines && bylines.length > 0 && (
-						<>
-							<div class="card-bylines">
-								{bylines.slice(0, 1).map((credit) => (
-									<span class="card-byline">
-										{credit.byline.avatarMediaId && (
-											<img
-												src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-												alt={credit.byline.displayName}
-												class="card-byline-avatar"
-											/>
-										)}
-										<span class="card-byline-name">
-											{credit.byline.displayName}
-										</span>
-									</span>
-								))}
-								{bylines.length > 1 && (
-									<span
-										class="byline-more"
-										data-tooltip={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										title={bylines
-											.slice(1)
-											.map((c) => c.byline.displayName)
-											.join(", ")}
-										tabindex="0"
-									>
-										+{bylines.length - 1}
-									</span>
-								)}
-							</div>
-							{(formattedDate || readingTime) && <span class="meta-dot" />}
-						</>
-					)
-				}
-				{formattedDate && <time>{formattedDate}</time>}
-				{formattedDate && readingTime && <span class="meta-dot" />}
-				{readingTime && <span>{readingTime} min</span>}
-			</div>
-			<h2 class="card-title">{title}</h2>
-			{excerpt && <p class="card-excerpt">{excerpt}</p>}
+<article class:list={["post-card", `post-card--${layout}`, className]}>
+	<div class="post-card-body">
+		<div class="post-card-meta">
+			{category && <Tag href={categoryHref ?? undefined} size="sm">{category}</Tag>}
+			{bylines.length > 0 && <Byline bylines={bylines} size={20} />}
+			{meta && <span class="post-card-date">{meta}</span>}
 		</div>
-	</a>
+
+		<a href={href} class="post-card-title-link">
+			<h3 class="post-card-title">{title}</h3>
+		</a>
+
+		{excerpt && <p class="post-card-excerpt">{excerpt}</p>}
+	</div>
+
 	{
-		tags && tags.length > 0 && (
-			<div class="card-tags">
-				{tags.slice(0, 2).map((tag) => (
-					<a href={`/tag/${tag.slug}`} class="card-tag">
-						{tag.label}
-					</a>
-				))}
-			</div>
+		image && (
+			<a href={href} class="post-card-thumb" aria-hidden="true" tabindex="-1">
+				<Image image={image} />
+			</a>
 		)
 	}
 </article>
@@ -109,171 +77,112 @@ const formattedDate = date
 <style>
 	.post-card {
 		display: flex;
+		gap: var(--space-5);
+		padding: var(--space-5) 0;
+		border-bottom: var(--border-hairline) solid var(--border);
+	}
+
+	.post-card--row {
+		flex-direction: row;
+		align-items: flex-start;
+	}
+
+	.post-card--stacked {
 		flex-direction: column;
+		align-items: stretch;
 	}
 
-	.card-link {
-		display: block;
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.card-image {
-		aspect-ratio: 16 / 10;
-		overflow: hidden;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.card-image img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform 0.3s ease;
-	}
-
-	.card-link:hover .card-image img {
-		transform: scale(1.03);
-	}
-
-	.card-placeholder {
-		aspect-ratio: 16 / 10;
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
-		margin-bottom: var(--spacing-4);
-	}
-
-	.card-body {
+	.post-card-body {
 		flex: 1;
+		min-width: 0;
 	}
 
-	.card-meta {
+	.post-card-meta {
 		display: flex;
 		align-items: center;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
 		flex-wrap: wrap;
-		column-gap: var(--spacing-3);
-		row-gap: 0;
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-2);
 	}
 
-	.card-meta time,
-	.card-meta span:not(.meta-dot) {
-		white-space: nowrap;
+	.post-card-date {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--text-muted);
 	}
 
-	.meta-dot {
-		width: 3px;
-		height: 3px;
-		border-radius: 50%;
-		background: var(--color-muted);
+	.post-card-title-link {
+		text-decoration: none;
 	}
 
-	.card-title {
-		font-size: var(--font-size-xl);
-		font-weight: 600;
+	.post-card-title {
+		font-family: var(--font-serif);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h3);
 		line-height: var(--leading-snug);
-		letter-spacing: var(--tracking-snug);
-		margin-bottom: var(--spacing-2);
-		transition: color var(--transition-fast);
+		color: var(--text-strong);
+		margin: 0;
+		transition: color var(--dur-fast) var(--ease-out);
 	}
 
-	.card-link:hover .card-title {
-		color: var(--color-accent);
+	.post-card:hover .post-card-title {
+		color: var(--accent);
 	}
 
-	.card-excerpt {
-		font-size: var(--font-size-base);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+	.post-card-excerpt {
+		font-family: var(--font-serif);
+		font-size: var(--text-prose); /* design's --text-body (size) */
+		line-height: 1.7;
+		color: var(--text-muted);
+		margin: var(--space-3) 0 0;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
 
-	.card-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-		margin-top: var(--spacing-3);
+	.post-card-thumb {
+		display: block;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		background: var(--bg-deep);
 	}
 
-	.card-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
+	.post-card--row .post-card-thumb {
+		flex: none;
+		order: 2;
+		width: 168px;
+		height: 120px;
 	}
 
-	.card-tag:hover {
-		color: var(--color-text);
-		background: var(--color-border);
+	.post-card--stacked .post-card-thumb {
+		order: 0;
+		width: 100%;
+		height: 200px;
+		margin-bottom: var(--space-4);
 	}
 
-	/* Byline styles */
-	.card-bylines {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-		white-space: nowrap;
-	}
-
-	.card-byline {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-1);
-	}
-
-	.card-byline-avatar {
-		width: var(--avatar-size-xs);
-		height: var(--avatar-size-xs);
-		border-radius: 50%;
+	.post-card-thumb :global(img) {
+		width: 100%;
+		height: 100%;
 		object-fit: cover;
+		transition: transform var(--dur-slow) var(--ease-out);
 	}
 
-	.card-byline-name {
-		font-weight: 500;
-		color: var(--color-text-secondary);
+	.post-card:hover .post-card-thumb :global(img) {
+		transform: scale(1.04);
 	}
 
-	.byline-more {
-		position: relative;
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		margin-left: 2px;
-		cursor: default;
-		border-radius: var(--radius);
-		outline-offset: 2px;
-	}
-
-	.byline-more:focus-visible {
-		outline: 2px solid var(--color-accent);
-	}
-
-	.byline-more[data-tooltip]:hover::after,
-	.byline-more[data-tooltip]:focus-visible::after {
-		content: attr(data-tooltip);
-		position: absolute;
-		bottom: calc(100% + 6px);
-		left: 50%;
-		transform: translateX(-50%);
-		white-space: nowrap;
-		background: var(--color-text);
-		color: var(--color-bg);
-		font-size: var(--font-size-xs);
-		font-weight: 400;
-		padding: var(--spacing-1) var(--spacing-2);
-		border-radius: var(--radius);
-		pointer-events: none;
-		z-index: 10;
+	@media (max-width: 640px) {
+		.post-card--row {
+			flex-direction: column;
+		}
+		.post-card--row .post-card-thumb {
+			order: 0;
+			width: 100%;
+			height: 200px;
+			margin-bottom: var(--space-4);
+		}
 	}
 </style>

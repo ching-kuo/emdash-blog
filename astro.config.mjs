@@ -70,33 +70,65 @@ export default defineConfig({
 	],
 	// Build-time fonts via Astro's native font API (downloads from Google during
 	// `astro build` -- the build/CI environment needs egress to fonts.google.com).
+	// Editorial pairing: Source Serif 4 for body + headings (long-form reading),
+	// Hanken Grotesk for UI/meta, JetBrains Mono for code. Each Latin face lists
+	// its Traditional Chinese companion in `fallbacks`, so Han codepoints fall
+	// through to the matching Noto TC face while Latin glyphs stay in the Latin
+	// font. The TC faces are registered (loaded) but not preloaded -- CJK files
+	// are large and load on demand via the fallback chain.
 	fonts: [
 		{
 			provider: fontProviders.google(),
-			name: "Inter",
+			name: "Source Serif 4",
+			cssVariable: "--font-serif",
+			weights: [400, 500, 600, 700],
+			fallbacks: [
+				"Noto Serif TC",
+				"Songti TC",
+				"PingFang TC",
+				"Georgia",
+				"serif",
+			],
+		},
+		{
+			// Traditional Chinese serif companion for --font-serif (body + headings).
+			provider: fontProviders.google(),
+			name: "Noto Serif TC",
+			cssVariable: "--font-serif-tc",
+			weights: [400, 500, 600, 700],
+			subsets: ["latin", "chinese-traditional"],
+			fallbacks: ["serif"],
+		},
+		{
+			provider: fontProviders.google(),
+			name: "Hanken Grotesk",
 			cssVariable: "--font-sans",
 			weights: [400, 500, 600, 700],
-			// Latin renders in Inter; Han characters fall through to Noto Sans TC
-			// (declared below) before the generic. So --font-sans resolves to
-			// "Inter", "Noto Sans TC", sans-serif everywhere it is used.
-			fallbacks: ["Noto Sans TC", "sans-serif"],
+			// Latin renders in Hanken; Han characters fall through to Noto Sans TC.
+			fallbacks: [
+				"Noto Sans TC",
+				"-apple-system",
+				"BlinkMacSystemFont",
+				"Segoe UI",
+				"sans-serif",
+			],
 		},
 		{
 			provider: fontProviders.google(),
 			name: "JetBrains Mono",
 			cssVariable: "--font-mono",
-			weights: [400, 500],
-			fallbacks: ["monospace"],
+			weights: [400, 500, 700],
+			fallbacks: ["Noto Sans TC", "monospace"],
 		},
 		{
-			// Traditional Chinese (zh-TW) body/UI text. CJK glyph sets are large,
-			// so we keep to two weights and the chinese-traditional + latin subsets,
-			// and do NOT preload (loaded on demand). Reached via Inter's fallback
-			// chain above rather than by referencing --font-sans-tc directly.
+			// Traditional Chinese (zh-TW) UI/meta companion for --font-sans. CJK
+			// glyph sets are large, so we keep to three weights and the
+			// chinese-traditional + latin subsets, and do NOT preload (loaded on
+			// demand via the fallback chain rather than by referencing it directly).
 			provider: fontProviders.google(),
 			name: "Noto Sans TC",
 			cssVariable: "--font-sans-tc",
-			weights: [400, 700],
+			weights: [400, 500, 700],
 			subsets: ["latin", "chinese-traditional"],
 			fallbacks: ["sans-serif"],
 		},

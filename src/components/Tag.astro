@@ -1,0 +1,72 @@
+---
+/*
+  Tag -- category / topic label. Ported from the design system's Tag.jsx.
+  Renders <a> when `href` is set, else a static <span> (hover only on links).
+*/
+interface Props {
+	href?: string;
+	variant?: "soft" | "outline" | "muted";
+	size?: "sm" | "md";
+	class?: string;
+}
+const { href, variant = "soft", size = "md", class: className } = Astro.props;
+const Tag = href ? "a" : "span";
+---
+
+<Tag class:list={["tag", `tag--${variant}`, `tag--${size}`, className]} href={href}>
+	<slot />
+</Tag>
+
+<style>
+	.tag {
+		display: inline-flex;
+		align-items: center;
+		font-family: var(--font-sans);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.02em;
+		line-height: 1.4;
+		border-radius: var(--radius-pill);
+		border: var(--border-hairline) solid transparent;
+		text-decoration: none;
+		transition:
+			background var(--dur-fast) var(--ease-out),
+			color var(--dur-fast) var(--ease-out);
+	}
+
+	.tag--sm {
+		padding: 0.12rem 0.55rem;
+		font-size: var(--text-xs);
+	}
+	.tag--md {
+		padding: 0.2rem 0.7rem;
+		font-size: var(--text-sm);
+	}
+
+	.tag--soft {
+		background: var(--accent-soft);
+		color: var(--accent);
+	}
+	a.tag--soft:hover {
+		background: var(--accent);
+		color: var(--on-accent);
+	}
+
+	/* --border-strong = COLOR tier here */
+	.tag--outline {
+		background: transparent;
+		color: var(--accent);
+		border-color: var(--border-strong);
+	}
+	a.tag--outline:hover {
+		background: var(--accent-soft);
+	}
+
+	.tag--muted {
+		background: transparent;
+		color: var(--text-muted);
+		border-color: var(--border);
+	}
+	a.tag--muted:hover {
+		background: var(--bg-deep);
+	}
+</style>

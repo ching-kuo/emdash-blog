@@ -1,0 +1,60 @@
+---
+/*
+  Byline -- a row of overlapping author avatars + names. Centralises the
+  byline markup and the `/_emdash/api/media/file/{id}` avatar URL that was
+  otherwise repeated across PostCard, the home hero, and the article header.
+  Pass `showRoles` to append each credit's role label, e.g. "Gene Kuo (Editor)".
+*/
+import type { ContentBylineCredit } from "emdash";
+import Avatar from "./Avatar.astro";
+
+interface Props {
+	bylines: ContentBylineCredit[];
+	size?: number;
+	max?: number;
+	showRoles?: boolean;
+	class?: string;
+}
+const { bylines, size = 22, max = 3, showRoles = false, class: className } = Astro.props;
+
+const avatarSrc = (c: ContentBylineCredit) =>
+	c.byline.avatarMediaId ? `/_emdash/api/media/file/${c.byline.avatarMediaId}` : undefined;
+const nameOf = (c: ContentBylineCredit) =>
+	showRoles && c.roleLabel ? `${c.byline.displayName} (${c.roleLabel})` : c.byline.displayName;
+---
+
+{
+	bylines.length > 0 && (
+		<span class:list={["byline", className]}>
+			<span class="byline-avatars">
+				{bylines.slice(0, max).map((c) => (
+					<Avatar name={c.byline.displayName} src={avatarSrc(c)} size={size} />
+				))}
+			</span>
+			<span class="byline-names">{bylines.map(nameOf).join(", ")}</span>
+		</span>
+	)
+}
+
+<style>
+	.byline {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--text-muted);
+	}
+
+	.byline-avatars {
+		display: inline-flex;
+	}
+
+	.byline-avatars > :global(* + *) {
+		margin-left: -6px;
+	}
+
+	.byline-names {
+		white-space: nowrap;
+	}
+</style>

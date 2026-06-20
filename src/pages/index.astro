@@ -1,16 +1,15 @@
 ---
-import {
-	getEmDashCollection,
-	getTermsForEntries,
-	getSiteSettings,
-} from "emdash";
+import { getEmDashCollection, getTermsForEntries, getSiteSettings } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
+import Tag from "../components/Tag.astro";
+import Button from "../components/Button.astro";
+import Byline from "../components/Byline.astro";
 import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// Limit to what we render (1 featured + 6 grid). The DB does the slicing
+// Limit to what we render (1 featured + 6 feed). The DB does the slicing
 // instead of fetching every post and discarding the tail in JS.
 const POSTS_PER_PAGE = 7;
 
@@ -25,52 +24,40 @@ const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Trim the lookahead post used to detect overflow
 const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
 const hasMorePosts = posts.length > POSTS_PER_PAGE;
 
-// Find the first post with a featured image for the hero
+// Hero = first post with a featured image; the rest fill the feed.
 const featuredPost = visiblePosts.find((p) => p.data.featured_image);
 const featuredIndex = featuredPost ? visiblePosts.indexOf(featuredPost) : -1;
-
-// Get remaining posts (exclude featured if found, limit to 6 for grid)
 const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 6);
 
-// Single batched query for tags across the featured post + grid posts.
-// Avoids the N+1 pattern of calling getEntryTerms() per entry.
-// Bylines are already hydrated on entry.data.bylines by getEmDashCollection.
+// One batched query for the topic chip (first tag) across featured + feed.
 const tagEntryIds = [
 	...(featuredPost ? [featuredPost.data.id] : []),
 	...gridPosts.map((p) => p.data.id),
 ];
-const tagsByEntry = await getTermsForEntries("posts", tagEntryIds, "tag");
-
-const featuredTags = featuredPost
-	? (tagsByEntry.get(featuredPost.data.id) ?? []).map((t) => ({
-			slug: t.slug,
-			label: t.label,
-		}))
-	: [];
-const featuredBylines = featuredPost?.data.bylines ?? [];
-
-const gridPostsWithTags = gridPosts.map((post) => ({
-	post,
-	tags: (tagsByEntry.get(post.data.id) ?? []).map((t) => ({
-		slug: t.slug,
-		label: t.label,
-	})),
-	bylines: post.data.bylines ?? [],
-}));
-
-// Format date helper
-function formatDate(date: Date | null | undefined) {
-	if (!date) return null;
-	return date.toLocaleDateString("en-US", {
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	});
+// Chip = the post's primary category (links to /category); tags stay
+// navigable via /tag pages and the article's tag row.
+const catsByEntry = await getTermsForEntries("posts", tagEntryIds, "category");
+function firstCategory(id: string) {
+	const t = (catsByEntry.get(id) ?? [])[0];
+	return t ? { label: t.label, href: `/category/${t.slug}` } : null;
 }
+
+function fmtDate(d: Date | null | undefined) {
+	return d
+		? d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+		: null;
+}
+
+const featuredCat = featuredPost ? firstCategory(featuredPost.data.id) : null;
+const featuredBylines = featuredPost?.data.bylines ?? [];
+const featuredMeta = featuredPost
+	? [fmtDate(featuredPost.data.publishedAt), `${getReadingTime(featuredPost.data.content)} min`]
+			.filter(Boolean)
+			.join(" · ")
+	: "";
 ---
 
 <Base title={siteTitle} description={siteTagline}>
@@ -79,108 +66,77 @@ function formatDate(date: Date | null | undefined) {
 			<section class="empty-state">
 				<h2>No posts yet</h2>
 				<p>Create your first post in the admin panel.</p>
-				<a href="/_emdash/admin/content/posts/new" class="btn">
-					Create a post
-				</a>
+				<Button href="/_emdash/admin/content/posts/new">Create a post</Button>
 			</section>
 		) : (
-			<div class="home-content">
-				{/* Featured Post - Side by side */}
+			<div class="home">
+				<header class="lede">
+					<h1 class="lede-title">{siteTitle}</h1>
+					{siteTagline && <p class="lede-sub">{siteTagline}</p>}
+				</header>
+
 				{featuredPost && (
-					<section class="featured-section">
-						<div class="featured-grid">
-							<a href={`/posts/${featuredPost.id}`} class="featured-image-link">
-								<div class="featured-image">
-									<Image image={featuredPost.data.featured_image} />
-								</div>
-							</a>
-							<div class="featured-content">
-								<div class="featured-meta">
-									{featuredBylines.length > 0 && (
-										<>
-											<div class="featured-bylines">
-												{featuredBylines.slice(0, 2).map((credit, index) => (
-													<>
-														{index > 0 && <span class="byline-sep">,</span>}
-														<span class="featured-byline">
-															{credit.byline.avatarMediaId && (
-																<img
-																	src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-																	alt={credit.byline.displayName}
-																	class="featured-byline-avatar"
-																/>
-															)}
-															<span class="featured-byline-name">
-																{credit.byline.displayName}
-															</span>
-														</span>
-													</>
-												))}
-												{featuredBylines.length > 2 && (
-													<span class="byline-more">
-														+{featuredBylines.length - 2}
-													</span>
-												)}
-											</div>
-											<span class="meta-dot" />
-										</>
-									)}
-									{formatDate(featuredPost.data.publishedAt) && (
-										<time>{formatDate(featuredPost.data.publishedAt)}</time>
-									)}
-									<span class="meta-dot" />
-									<span>
-										{getReadingTime(featuredPost.data.content)} min read
-									</span>
-								</div>
-								<a
-									href={`/posts/${featuredPost.id}`}
-									class="featured-title-link"
-								>
-									<h1 class="featured-title">{featuredPost.data.title}</h1>
-								</a>
-								{featuredPost.data.excerpt && (
-									<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
+					<article class="featured">
+						<div class="featured-text">
+							<div class="featured-meta">
+								{featuredCat && (
+									<Tag href={featuredCat.href} size="sm">
+										{featuredCat.label}
+									</Tag>
 								)}
-								{featuredTags.length > 0 && (
-									<div class="featured-tags">
-										{featuredTags.map((tag) => (
-											<a href={`/tag/${tag.slug}`} class="featured-tag">
-												{tag.label}
-											</a>
-										))}
-									</div>
+								{featuredBylines.length > 0 && (
+									<Byline bylines={featuredBylines} size={22} max={2} />
 								)}
+								{featuredMeta && <span class="featured-date">{featuredMeta}</span>}
 							</div>
+							<a href={`/posts/${featuredPost.id}`} class="featured-title-link">
+								<h2 class="featured-title">{featuredPost.data.title}</h2>
+							</a>
+							{featuredPost.data.excerpt && (
+								<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
+							)}
+							<Button href={`/posts/${featuredPost.id}`} variant="secondary">
+								繼續閱讀 →
+							</Button>
 						</div>
-					</section>
+						<a
+							href={`/posts/${featuredPost.id}`}
+							class="featured-thumb"
+							aria-hidden="true"
+							tabindex="-1"
+						>
+							<Image image={featuredPost.data.featured_image} />
+						</a>
+					</article>
 				)}
 
-				{/* Latest Posts */}
-				{gridPostsWithTags.length > 0 && (
-					<section class="posts-section">
-						<header class="section-header">
-							<h2 class="section-title">Latest</h2>
+				{gridPosts.length > 0 && (
+					<section class="feed">
+						<header class="feed-head">
+							<h2 class="feed-title">Latest</h2>
 							{hasMorePosts && (
-								<a href="/posts" class="section-link">
-									View all
+								<a href="/posts" class="feed-link">
+									View all →
 								</a>
 							)}
 						</header>
-						<div class="posts-grid">
-							{gridPostsWithTags.map(({ post, tags, bylines }) => (
+						{gridPosts.map((post) => {
+							const cat = firstCategory(post.data.id);
+							return (
 								<PostCard
 									title={post.data.title ?? "Untitled"}
-									excerpt={post.data.excerpt}
-									featuredImage={post.data.featured_image}
 									href={`/posts/${post.id}`}
+									category={cat?.label}
+									categoryHref={cat?.href}
 									date={post.data.publishedAt ?? undefined}
 									readingTime={getReadingTime(post.data.content)}
-									tags={tags}
-									bylines={bylines}
+									excerpt={post.data.excerpt}
+									image={post.data.featured_image}
+									bylines={post.data.bylines ?? []}
+									layout="row"
 								/>
-							))}
-						</div>
+							);
+						})}
 					</section>
 				)}
 			</div>
@@ -189,275 +145,166 @@ function formatDate(date: Date | null | undefined) {
 </Base>
 
 <style>
-	.home-content {
+	.home {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-16) var(--spacing-6);
+		padding: var(--space-8) var(--space-6) 0;
 	}
 
-	/* Featured Section - Side by side */
-	.featured-section {
-		margin-bottom: var(--spacing-16);
+	/* Lede */
+	.lede {
+		max-width: var(--measure);
+		margin-bottom: var(--space-8);
 	}
 
-	.featured-grid {
+	.lede-title {
+		font-family: var(--font-serif);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h1);
+		line-height: 1.15;
+		letter-spacing: var(--tracking-tight);
+		color: var(--text-strong);
+		margin: 0;
+	}
+
+	.lede-sub {
+		font-family: var(--font-serif);
+		font-size: var(--text-lg);
+		line-height: 1.7;
+		color: var(--text-muted);
+		margin: var(--space-4) 0 0;
+	}
+
+	/* Featured */
+	.featured {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-8);
+		grid-template-columns: 1.1fr 1fr;
+		gap: var(--space-7);
 		align-items: center;
-	}
-
-	.featured-image-link {
-		grid-column: 1 / 3;
-		display: block;
-		/* Extend to viewport edge, but cap at -6rem minimum extension */
-		margin-left: min(
-			-6rem,
-			calc(-1 * (var(--spacing-6) + (100vw - var(--wide-width)) / 2))
-		);
-	}
-
-	.featured-image {
-		overflow: hidden;
-		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-		background: var(--color-surface);
-	}
-
-	.featured-image img {
-		width: 100%;
-		height: auto;
-		aspect-ratio: 4 / 3;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	.featured-image-link:hover .featured-image img,
-	.featured-grid:has(.featured-title-link:hover) .featured-image img {
-		transform: scale(1.02);
-	}
-
-	.featured-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-4);
+		padding-bottom: var(--space-7);
+		border-bottom: var(--border-hairline) solid var(--border);
 	}
 
 	.featured-meta {
 		display: flex;
 		align-items: center;
+		gap: var(--space-3);
+		margin-bottom: var(--space-4);
 		flex-wrap: wrap;
-		column-gap: var(--spacing-3);
-		row-gap: var(--spacing-1);
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
 	}
 
-	.meta-dot {
-		width: 3px;
-		height: 3px;
-		border-radius: 50%;
-		background: var(--color-muted);
-	}
-
-	/* Featured bylines */
-	.featured-bylines {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-	}
-
-	.featured-byline {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-2);
-	}
-
-	.featured-byline-avatar {
-		width: var(--avatar-size-md);
-		height: var(--avatar-size-md);
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.featured-byline-name {
-		font-weight: 500;
-		color: var(--color-text-secondary);
-	}
-
-	.byline-sep {
-		color: var(--color-muted);
-		margin-right: 2px;
-	}
-
-	.byline-more {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		margin-left: 2px;
+	.featured-date {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--text-muted);
 	}
 
 	.featured-title-link {
 		text-decoration: none;
-		color: inherit;
 	}
 
 	.featured-title {
-		font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-4xl));
-		font-weight: 700;
-		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
-		transition: color var(--transition-fast);
+		font-family: var(--font-serif);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h2);
+		line-height: var(--leading-snug);
+		color: var(--text-strong);
+		margin: 0;
+		transition: color var(--dur-fast) var(--ease-out);
 	}
 
-	.featured-title-link:hover .featured-title,
-	.featured-grid:has(.featured-image-link:hover) .featured-title {
-		color: var(--color-accent);
+	.featured-title-link:hover .featured-title {
+		color: var(--accent);
 	}
 
 	.featured-excerpt {
-		font-size: var(--font-size-lg);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+		font-family: var(--font-serif);
+		font-size: var(--text-prose);
+		line-height: 1.7;
+		color: var(--text-muted);
+		margin: var(--space-4) 0 var(--space-5);
 	}
 
-	.featured-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-		margin-top: var(--spacing-2);
+	.featured-thumb {
+		display: block;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		background: var(--bg-deep);
+		aspect-ratio: 16 / 11;
 	}
 
-	.featured-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
+	.featured-thumb :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform var(--dur-slow) var(--ease-out);
 	}
 
-	.featured-tag:hover {
-		color: var(--color-text);
-		background: var(--color-border);
+	.featured:hover .featured-thumb :global(img) {
+		transform: scale(1.03);
 	}
 
-	/* Section header */
-	.section-header {
+	/* Feed */
+	.feed {
+		max-width: 820px;
+		margin-top: var(--space-7);
+	}
+
+	.feed-head {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-		margin-bottom: var(--spacing-8);
-		padding-bottom: var(--spacing-4);
-		border-bottom: 1px solid var(--color-border-subtle);
+		margin-bottom: var(--space-2);
 	}
 
-	.section-title {
-		font-size: var(--font-size-sm);
-		font-weight: 500;
+	.feed-title {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-bold);
 		text-transform: uppercase;
-		letter-spacing: var(--tracking-wider);
-		color: var(--color-muted);
+		letter-spacing: var(--tracking-label);
+		color: var(--text-muted);
 	}
 
-	.section-link {
-		font-size: var(--font-size-sm);
-		color: var(--color-accent);
+	.feed-link {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--accent);
 		text-decoration: none;
-		transition: color var(--transition-fast);
 	}
 
-	.section-link:hover {
-		color: var(--color-accent-hover);
+	.feed-link:hover {
+		color: var(--accent-strong);
 	}
 
-	/* Posts Grid */
-	.posts-section {
-	}
-
-	.posts-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-12) var(--spacing-8);
-	}
-
-	/* Empty State */
+	/* Empty state */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--spacing-3);
+		gap: var(--space-3);
 		text-align: center;
-		padding: var(--spacing-20) var(--spacing-6);
-		max-width: 400px;
+		padding: var(--space-9) var(--space-6);
+		max-width: 420px;
 		margin: 0 auto;
 	}
 
 	.empty-state h2 {
-		font-size: var(--font-size-2xl);
-		font-weight: 600;
+		font-family: var(--font-serif);
+		font-size: var(--text-h3);
 	}
 
 	.empty-state p {
-		color: var(--color-muted);
+		color: var(--text-muted);
 	}
 
-	.btn {
-		display: inline-block;
-		margin-top: var(--spacing-4);
-		padding: var(--spacing-3) var(--spacing-6);
-		background: var(--color-accent);
-		color: var(--color-on-accent);
-		text-decoration: none;
-		border-radius: var(--radius);
-		font-size: var(--font-size-sm);
-		font-weight: 500;
-		transition: background var(--transition-fast);
-	}
-
-	.btn:hover {
-		background: var(--color-accent-hover);
-	}
-
-	/* Responsive */
-	@media (max-width: 900px) {
-		.home-content {
-			padding: var(--spacing-6) var(--spacing-4) var(--spacing-12);
-		}
-
-		.featured-image-link {
-			margin-left: 0;
-		}
-
-		.featured-grid {
+	@media (max-width: 860px) {
+		.featured {
 			grid-template-columns: 1fr;
-			gap: var(--spacing-6);
+			gap: var(--space-5);
 		}
-
-		.featured-image {
-			border-radius: var(--radius-lg);
-		}
-
-		.featured-image img {
-			aspect-ratio: 16 / 9;
-		}
-
-		.posts-grid {
-			grid-template-columns: repeat(2, 1fr);
-			gap: var(--spacing-8) var(--spacing-6);
-		}
-	}
-
-	@media (max-width: 600px) {
-		.featured-title {
-			font-size: var(--font-size-2xl);
-		}
-
-		.posts-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-8);
+		.featured-thumb {
+			order: -1;
 		}
 	}
 </style>

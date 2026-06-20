@@ -19,8 +19,10 @@ const { items: results } = query
 	title={query ? `Search: ${query}` : "Search"}
 	description="Search blog posts"
 >
-	<section class="search-page">
-		<h1 class="search-title">Search</h1>
+	<div class="search-page">
+		<header class="search-header">
+			<h1 class="search-title">Search</h1>
+		</header>
 
 		<form method="get" action="/search" class="search-form">
 			<input
@@ -67,66 +69,93 @@ const { items: results } = query
 		}
 
 		{!query && <p class="search-hint">Enter a search term to find posts.</p>}
-	</section>
+	</div>
 </Base>
 
 <style>
 	.search-page {
-		max-width: var(--max-width);
+		max-width: var(--measure);
 		margin: 0 auto;
-		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+		padding: var(--space-8) var(--space-6) var(--space-9);
+	}
+
+	.search-header {
+		margin-bottom: var(--space-6);
 	}
 
 	.search-title {
-		font-size: var(--font-size-2xl);
-		margin-bottom: var(--spacing-6);
+		font-family: var(--font-serif);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h1);
+		line-height: var(--leading-snug);
+		letter-spacing: var(--tracking-tight);
+		color: var(--text-strong);
+		margin: 0;
 	}
 
+	/* Search form */
 	.search-form {
 		display: flex;
-		gap: var(--spacing-2);
-		margin-bottom: var(--spacing-8);
+		gap: var(--space-2);
+		margin-bottom: var(--space-7);
 	}
 
 	.search-input {
 		flex: 1;
-		padding: var(--spacing-2) var(--spacing-4);
-		font-size: var(--font-size-base);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-bg);
-		color: var(--color-text);
+		padding: var(--space-3) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		color: var(--text-body);
+		background: var(--surface-card);
+		border: var(--border-thick) solid var(--border);
+		border-radius: var(--radius-md);
+		transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+		appearance: none;
+	}
+
+	.search-input::placeholder {
+		color: var(--text-faint);
 	}
 
 	.search-input:focus {
 		outline: none;
-		border-color: var(--color-accent);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 	}
 
 	.search-button {
-		padding: var(--spacing-2) var(--spacing-6);
-		font-size: var(--font-size-base);
-		background: var(--color-accent);
-		color: var(--color-on-accent);
+		padding: var(--space-3) var(--space-5);
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		font-weight: var(--weight-semibold);
+		background: var(--accent);
+		color: var(--on-accent);
 		border: none;
-		border-radius: var(--radius);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		font-weight: 500;
+		white-space: nowrap;
+		transition: background var(--dur-fast) var(--ease-out);
 	}
 
 	.search-button:hover {
-		opacity: 0.9;
+		background: var(--accent-strong);
 	}
 
+	/* Status text */
 	.search-summary {
-		color: var(--color-muted);
-		margin-bottom: var(--spacing-6);
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--text-muted);
+		margin-bottom: var(--space-6);
 	}
 
 	.search-hint {
-		color: var(--color-muted);
+		font-family: var(--font-serif);
+		font-size: var(--text-prose);
+		color: var(--text-muted);
 	}
 
+	/* Results list */
 	.search-results {
 		list-style: none;
 		padding: 0;
@@ -136,8 +165,8 @@ const { items: results } = query
 	}
 
 	.search-result {
-		padding: var(--spacing-6) 0;
-		border-bottom: 1px solid var(--color-border-subtle);
+		padding: var(--space-5) 0;
+		border-bottom: var(--border-hairline) solid var(--border);
 	}
 
 	.search-result:first-child {
@@ -155,28 +184,50 @@ const { items: results } = query
 	}
 
 	.result-title {
-		font-size: var(--font-size-xl);
-		font-weight: 600;
+		font-family: var(--font-serif);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h3);
 		line-height: var(--leading-snug);
-		margin-bottom: var(--spacing-2);
-		transition: color var(--transition-fast);
+		color: var(--text-strong);
+		margin: 0 0 var(--space-3);
+		transition: color var(--dur-fast) var(--ease-out);
 	}
 
 	.result-link:hover .result-title {
-		color: var(--color-accent);
+		color: var(--accent);
 	}
 
 	.result-snippet {
-		font-size: var(--font-size-base);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
+		font-family: var(--font-serif);
+		font-size: var(--text-prose);
+		line-height: var(--leading-prose);
+		color: var(--text-muted);
+		margin: 0;
 	}
 
 	/* FTS returns <mark> wrapping the matched terms */
 	.result-snippet :global(mark) {
-		background: var(--color-accent-ring, rgba(99, 102, 241, 0.2));
-		color: inherit;
+		background: color-mix(in srgb, var(--accent) 18%, transparent);
+		color: var(--text-strong);
 		padding: 0 0.1em;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
+	}
+
+	@media (max-width: 600px) {
+		.search-page {
+			padding: var(--space-6) var(--space-4) var(--space-8);
+		}
+
+		.search-title {
+			font-size: var(--text-h2);
+		}
+
+		.search-form {
+			flex-direction: column;
+		}
+
+		.search-button {
+			width: 100%;
+		}
 	}
 </style>

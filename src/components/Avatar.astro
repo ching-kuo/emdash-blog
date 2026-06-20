@@ -1,0 +1,76 @@
+---
+/*
+  Avatar -- author image with initials fallback. Ported from the design
+  system's Avatar.jsx. Used in the footer about block and post bylines.
+  Size is a named scale (sm/md/lg/xl) or an explicit pixel number.
+*/
+interface Props {
+	src?: string | null;
+	alt?: string;
+	name?: string;
+	size?: "sm" | "md" | "lg" | "xl" | number;
+	ring?: boolean;
+	class?: string;
+}
+const { src, alt = "", name = "", size = "md", ring = false, class: className } = Astro.props;
+
+const SIZES: Record<string, number> = { sm: 32, md: 48, lg: 72, xl: 104 };
+const px = typeof size === "number" ? size : (SIZES[size] ?? 48);
+const fontPx = Math.round(px * 0.38);
+
+const initials = (name || alt)
+	.split(/\s+/)
+	.filter(Boolean)
+	.slice(0, 2)
+	.map((w) => w[0])
+	.join("")
+	.toUpperCase();
+
+const style = `--av-size:${px}px;--av-font:${fontPx}px`;
+---
+
+{
+	src ? (
+		<img
+			src={src}
+			alt={alt || name}
+			class:list={["avatar", className]}
+			style={style}
+			data-ring={ring ? "true" : undefined}
+		/>
+	) : (
+		<span
+			class:list={["avatar", className]}
+			style={style}
+			data-ring={ring ? "true" : undefined}
+			aria-label={alt || name}
+		>
+			{initials || "?"}
+		</span>
+	)
+}
+
+<style>
+	.avatar {
+		width: var(--av-size);
+		height: var(--av-size);
+		border-radius: 50%;
+		object-fit: cover;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		background: var(--accent-soft);
+		color: var(--accent);
+		font-family: var(--font-sans);
+		font-weight: var(--weight-semibold);
+		font-size: var(--av-font);
+		overflow: hidden;
+	}
+
+	/* design used --border-strong as a 2px WIDTH here; renamed to --border-thick */
+	.avatar[data-ring="true"] {
+		border: var(--border-thick) solid var(--bg);
+		box-shadow: 0 0 0 2px var(--accent);
+	}
+</style>
