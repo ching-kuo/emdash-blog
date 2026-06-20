@@ -71,7 +71,7 @@
 	h6 {
 		font-family: var(--font-serif);
 		color: var(--text-strong);
-		font-weight: var(--weight-bold);
+		font-weight: var(--weight-heading);
 		line-height: var(--leading-snug);
 		text-wrap: balance;
 	}

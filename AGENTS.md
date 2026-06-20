@@ -72,7 +72,7 @@ Site settings have `title` and `tagline`. The title is the header wordmark (the 
 
 ## Visual character
 
-Warm, editorial, text-forward. **Source Serif 4** (with **Noto Serif TC** for Han) on `--font-serif` carries body *and* headings; **Hanken Grotesk** (+ Noto Sans TC) on `--font-sans` is for nav, meta, tags, buttons; **JetBrains Mono** on `--font-mono` for code. Body is 18px (`--text-prose`) at 1.85 line-height on a ~680px measure (`--measure`).
+Warm, editorial, text-forward. **Source Serif 4** (with **Noto Serif TC** for Han) on `--font-serif` carries body *and* headings; **Hanken Grotesk** (+ Noto Sans TC) on `--font-sans` is for nav, meta, tags, buttons; **JetBrains Mono** on `--font-mono` for code. Body is 18px (`--text-prose`) at 1.85 line-height on a ~680px measure (`--measure`). Headings/titles are set at `--weight-heading` (600) -- a notch below bold, which reads more elegant for Latin display type while keeping CJK presence; `--weight-bold` (700) is reserved for inline `<strong>` emphasis. zh-TW body + headings render in **Noto Serif TC**; zh-TW UI/meta in **Noto Sans TC**.
 
 Light is warm paper (`--bg` `#F5F0E8`) with warm ink; dark follows Apple HIG (warm true-dark base, elevation via progressively lighter surfaces, soft near-white text) -- a hand-tuned pair, not auto-inverted. A single restrained **sienna** accent: `--accent` `#AC4E2A` light, `#E2926A` dark. Don't add a second accent. Semantic hues (`--info`/`--warn`/`--success`/`--danger`) are reserved for callouts.
 
@@ -91,7 +91,7 @@ Tokens worth knowing (full list in `theme.css`):
 - Surfaces/borders: `--bg`, `--bg-deep`, `--surface-card`, `--surface-code`, `--surface-inline`, `--surface-raised`, `--border`, `--border-strong` (colour), `--border-hairline` / `--border-thick` (widths)
 - Text colours: `--text-strong`, `--text-body`, `--text-muted`, `--text-faint`, `--text-code`
 - Accent: `--accent`, `--accent-strong`, `--accent-soft`, `--on-accent`, `--link`, `--link-hover`; semantic `--info`/`--warn`/`--success`/`--danger` (+ `-soft`)
-- `--font-serif`, `--font-sans`, `--font-mono`
+- `--font-serif`, `--font-sans`, `--font-mono`; weights `--weight-regular/medium/semibold/bold`, plus `--weight-heading` (the single knob for heading/title weight)
 - Type sizes: `--text-xs/sm/base/prose/lg/h3/h2/h1/display` -- **the body size is `--text-prose`** (because `--text-body` is a colour)
 - Layout: `--measure` (680px body), `--measure-wide` (832px), `--wide-width` (1080px shell), `--header-height`
 - `--space-1..9`, `--flow-gap`; `--radius-sm/md/lg/pill`; `--dur-fast/base/slow`, `--ease-out`; `--tracking-tight/label`
