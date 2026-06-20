@@ -63,7 +63,7 @@
 
 	/* --- Weights / line-heights / tracking / measure ---
 	--weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
-	--weight-heading: 600;   headings/titles (700 stays for inline <strong>); drop to 500 for lighter display type
+	--weight-heading: 500;   headings/titles (700 stays for inline <strong>); raise to 600 for more presence
 	--leading-tight: 1.2;  --leading-snug: 1.35;  --leading-prose: 1.85;
 	--leading-ui: 1.5;     --leading-code: 1.7;
 	--tracking-label: 0.08em;  --tracking-tight: -0.01em;

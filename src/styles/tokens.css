@@ -93,9 +93,9 @@
 		--weight-medium: 500;
 		--weight-semibold: 600;
 		--weight-bold: 700;
-		/* Headings/titles read more elegant a notch below bold; 700 stays for
-		   inline <strong> emphasis. Drop to 500 for an even lighter display feel. */
-		--weight-heading: 600;
+		/* Headings/titles read lighter and cleaner than body-bold; 700 stays
+		   for inline <strong> emphasis. 600 if titles need more presence. */
+		--weight-heading: 500;
 
 		--leading-tight: 1.2;
 		--leading-snug: 1.35;
